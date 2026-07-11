@@ -7,8 +7,11 @@ TOKEN = "8892992589:AAHJaYwKpyNj3Kp7-oYnreE3WEvdvxEkGKw"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! Your Telegram bot is working.")
-
+    await update.message.reply_text(
+        "Welcome to Godspower Trading Bot 📊\n\n"
+        "Your EUR/USD analysis assistant is online.\n"
+        "Use /analysis to check the market."
+    )
 
 async def analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = analyze_market()
