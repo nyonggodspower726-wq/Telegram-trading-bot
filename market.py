@@ -1,21 +1,26 @@
-
 from datetime import datetime
+
+def is_market_open():
+    """
+    Forex market is closed on Saturday (5) and Sunday (6).
+    Monday = 0
+    """
+    day = datetime.utcnow().weekday()
+
+    if day in [5, 6]:
+        return False
+
+    return True
 
 
 def get_market_data():
-    """
-    Market data structure for the strategy.
-    Live prices will be connected later.
-    """
+    if not is_market_open():
+        return {
+            "status": "CLOSED"
+        }
 
     return {
+        "status": "OPEN",
         "pair": "EUR/USD",
-        "timeframe": "5M",
-        "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-        "open": None,
-        "high": None,
-        "low": None,
-        "close": None,
-        "volume": None,
-        "status": "Waiting for live market data..."
+        "timeframe": "5M"
     }
