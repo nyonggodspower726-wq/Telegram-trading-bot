@@ -39,34 +39,49 @@ def analyze_market():
     swing_high = max(highs)
     swing_low = min(lows)
 
+    confidence = 0
+    reasons = []
+
+    # Trend
     if close_price > open_price:
         trend = "Bullish 🟢"
+        confidence += 20
+        reasons.append("Bullish trend")
     elif close_price < open_price:
         trend = "Bearish 🔴"
+        confidence += 20
+        reasons.append("Bearish trend")
     else:
         trend = "Neutral 🟡"
 
     liquidity = "None"
-    structure = "Waiting"
+
+    # Liquidity Sweep
+    if low_price <= swing_low:
+        liquidity = "Sell-side Sweep ✅"
+        confidence += 30
+        reasons.append("Sell-side liquidity swept")
+
+    elif high_price >= swing_high:
+        liquidity = "Buy-side Sweep ✅"
+        confidence += 30
+        reasons.append("Buy-side liquidity swept")
+
     signal = "WAIT ⏳"
-    confidence = "40%"
 
-    # CRT Logic
-    if high_price >= swing_high:
-        liquidity = "Buy-side Liquidity Sweep"
-
-    elif low_price <= swing_low:
-        liquidity = "Sell-side Liquidity Sweep"
-
-    if liquidity == "Buy-side Liquidity Sweep" and close_price < open_price:
-        structure = "Bearish Rejection"
-        signal = "SELL 🔴"
-        confidence = "75%"
-
-    elif liquidity == "Sell-side Liquidity Sweep" and close_price > open_price:
-        structure = "Bullish Rejection"
+    # Confirmation Candle
+    if liquidity == "Sell-side Sweep ✅" and close_price > open_price:
+        confidence += 50
+        reasons.append("Bullish confirmation candle")
         signal = "BUY 🟢"
-        confidence = "75%"
+
+    elif liquidity == "Buy-side Sweep ✅" and close_price < open_price:
+        confidence += 50
+        reasons.append("Bearish confirmation candle")
+        signal = "SELL 🔴"
+
+    if confidence < 50:
+        signal = "WAIT ⏳"
 
     return f"""
 📊 PipsPilot CRT Analysis
@@ -81,8 +96,11 @@ Swing High: {swing_high}
 Swing Low : {swing_low}
 
 Liquidity: {liquidity}
-Structure: {structure}
+
+Confidence: {confidence}%
 
 Signal: {signal}
-Confidence: {confidence}
+
+Reason:
+- {'\n- '.join(reasons) if reasons else 'No valid setup'}
 """
