@@ -31,6 +31,8 @@ Pair: {pair}
     latest = candles[0]
     previous = candles[1]
 
+    candle_time = latest.get("datetime", "Unknown")
+
     open_price = float(latest["open"])
     close_price = float(latest["close"])
     high_price = float(latest["high"])
@@ -154,6 +156,7 @@ Pair: {pair}
 Pair: {pair}
 Timeframe: {timeframe}
 Expiry: {expiry}
+Candle Time: {candle_time}
 
 Trend: {trend}
 
