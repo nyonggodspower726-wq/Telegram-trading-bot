@@ -7,32 +7,52 @@ from strategy import analyze_market
 from scanner import start_scanner
 
 
-TOKEN = "8892992589:AAHDo9wGV9edd3vUJ7Y6P3qj0QC1dwjGjQI"
+TOKEN = "YOUR_BOT_TOKEN"
+
+
+PAIRS = [
+    "EUR/USD",
+    "GBP/USD",
+    "USD/JPY",
+    "XAU/USD"
+]
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Welcome to Godspower Trading Bot 📊\n\n"
-        "Your EUR/USD analysis assistant is online.\n"
-        "The market scanner is active.\n"
-        "Use /analysis to check the market."
+        "🤖 PipsPilot V2 Online\n\n"
+        "✅ Automatic Scanner Running\n"
+        "📊 Monitoring:\n"
+        "• EUR/USD\n"
+        "• GBP/USD\n"
+        "• USD/JPY\n"
+        "• XAU/USD\n\n"
+        "Timeframe: 5 Minutes\n"
+        "Expiry: 5 Minutes"
     )
 
 
 async def analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    result = analyze_market()
-    await update.message.reply_text(result)
+
+    message = ""
+
+    for pair in PAIRS:
+        message += analyze_market(pair)
+        message += "\n\n"
+
+    await update.message.reply_text(message)
 
 
 def main():
+
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("analysis", analysis))
 
-    print("Bot is running...")
+    print("🤖 PipsPilot V2 Running...")
 
-    # Start automatic scanner
+    # Start background scanner
     asyncio.get_event_loop().create_task(start_scanner(app))
 
     app.run_polling()
