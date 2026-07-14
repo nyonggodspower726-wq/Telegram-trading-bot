@@ -2,10 +2,6 @@ from market import get_market_data
 
 
 def analyze_market():
-    """
-    EUR/USD binary strategy framework.
-    """
-
     pair = "EUR/USD"
     timeframe = "5M"
     expiry = "15 Minutes"
@@ -14,35 +10,60 @@ def analyze_market():
 
     if data.get("status") == "CLOSED":
         return f"""
-📊 EUR/USD Binary Analysis
+📊 PipsPilot CRT Analysis
 
 🛑 Market CLOSED
 
 {data.get("message")}
 """
 
-    trend = "Waiting for candle analysis..."
-    structure = "Waiting for BOS / MSS..."
-    key_area = "Waiting for Liquidity / Order Block..."
-    engulfing = "Waiting for Engulfing Candle..."
+    if "values" not in data:
+        return f"""
+❌ Failed to fetch market data.
+
+Response:
+{data}
+"""
+
+    candles = data["values"]
+
+    latest = candles[0]
+
+    open_price = float(latest["open"])
+    high_price = float(latest["high"])
+    low_price = float(latest["low"])
+    close_price = float(latest["close"])
+
+    if close_price > open_price:
+        trend = "Bullish 🟢"
+    elif close_price < open_price:
+        trend = "Bearish 🔴"
+    else:
+        trend = "Neutral 🟡"
 
     return f"""
-📊 EUR/USD Binary Analysis
+📊 PipsPilot CRT Analysis
 
 Pair: {pair}
-Chart: {timeframe}
+Timeframe: {timeframe}
 Expiry: {expiry}
 
-Latest Market Data Received ✅
+Current Candle
+
+Open: {open_price}
+High: {high_price}
+Low: {low_price}
+Close: {close_price}
 
 Trend: {trend}
-Structure: {structure}
-Key Area: {key_area}
-Engulfing: {engulfing}
 
-Signal: NO TRADE
+Liquidity Sweep: Waiting...
+Market Structure Shift: Waiting...
+Order Block: Waiting...
+CRT Entry: Waiting...
+
+Signal: WAIT ⏳
 Confidence: 0%
 
-Data:
-{data}
+Waiting for a valid CRT setup.
 """
