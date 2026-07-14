@@ -7,7 +7,7 @@ from strategy import analyze_market
 from scanner import start_scanner
 
 
-TOKEN = "YOUR_BOT_TOKEN"
+TOKEN = "8892992589:AAGhbO7pD6OEVi2rAaP3WIF5g64Xk8Hiyek"
 
 
 PAIRS = [
