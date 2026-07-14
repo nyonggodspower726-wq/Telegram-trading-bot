@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import requests
 
-API_KEY = os.getenv("TWELVE_DATA_API_KEY")
+API_KEY = "aba787bf68ba4008b359f34229fdbc29"
 
 
 def is_market_open():
