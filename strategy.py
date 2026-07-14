@@ -3,8 +3,8 @@ from market import get_market_data
 
 def analyze_market(pair):
 
-    timeframe = "1M"
-    expiry = "2 Minutes"
+    timeframe = "5M"
+    expiry = "15 Minutes"
 
     data = get_market_data(pair)
 
