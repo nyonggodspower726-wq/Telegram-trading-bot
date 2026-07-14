@@ -27,17 +27,18 @@ def analyze_market():
     candles = data["values"]
 
     latest = candles[0]
-    previous = candles[1]
 
     open_price = float(latest["open"])
     high_price = float(latest["high"])
     low_price = float(latest["low"])
     close_price = float(latest["close"])
 
-    prev_high = float(previous["high"])
-    prev_low = float(previous["low"])
+    highs = [float(c["high"]) for c in candles[:10]]
+    lows = [float(c["low"]) for c in candles[:10]]
 
-    # Trend
+    swing_high = max(highs)
+    swing_low = min(lows)
+
     if close_price > open_price:
         trend = "Bullish 🟢"
     elif close_price < open_price:
@@ -45,27 +46,27 @@ def analyze_market():
     else:
         trend = "Neutral 🟡"
 
-    # Simple CRT checks
-    liquidity = "No Sweep"
-    structure = "No Break"
+    liquidity = "None"
+    structure = "Waiting"
     signal = "WAIT ⏳"
-    confidence = "20%"
+    confidence = "40%"
 
-    if high_price > prev_high:
-        liquidity = "Buy-side Liquidity Taken"
+    # CRT Logic
+    if high_price >= swing_high:
+        liquidity = "Buy-side Liquidity Sweep"
 
-    if low_price < prev_low:
-        liquidity = "Sell-side Liquidity Taken"
+    elif low_price <= swing_low:
+        liquidity = "Sell-side Liquidity Sweep"
 
-    if close_price > prev_high:
-        structure = "Bullish Break"
-        signal = "BUY 🟢"
-        confidence = "65%"
-
-    elif close_price < prev_low:
-        structure = "Bearish Break"
+    if liquidity == "Buy-side Liquidity Sweep" and close_price < open_price:
+        structure = "Bearish Rejection"
         signal = "SELL 🔴"
-        confidence = "65%"
+        confidence = "75%"
+
+    elif liquidity == "Sell-side Liquidity Sweep" and close_price > open_price:
+        structure = "Bullish Rejection"
+        signal = "BUY 🟢"
+        confidence = "75%"
 
     return f"""
 📊 PipsPilot CRT Analysis
@@ -74,16 +75,10 @@ Pair: {pair}
 Timeframe: {timeframe}
 Expiry: {expiry}
 
-Current Candle
-
-Open : {open_price}
-High : {high_price}
-Low  : {low_price}
-Close: {close_price}
-
 Trend: {trend}
 
-CRT Analysis
+Swing High: {swing_high}
+Swing Low : {swing_low}
 
 Liquidity: {liquidity}
 Structure: {structure}
