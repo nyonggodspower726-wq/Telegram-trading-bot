@@ -1,12 +1,12 @@
 from market import get_market_data
 
 
-def analyze_market():
-    pair = "EUR/USD"
+def analyze_market(pair):
+
     timeframe = "5M"
     expiry = "15 Minutes"
 
-    data = get_market_data()
+    data = get_market_data(pair)
 
     if data.get("status") == "CLOSED":
         return f"""
@@ -20,6 +20,8 @@ def analyze_market():
     if "values" not in data:
         return f"""
 ❌ API Error
+
+Pair: {pair}
 
 {data}
 """
@@ -88,7 +90,7 @@ def analyze_market():
         close_price <= prev_open
     )
 
-    # Overlapping candle
+    # Overlap
     bullish_overlap = (
         close_price > open_price and
         close_price > prev_close
@@ -110,7 +112,7 @@ def analyze_market():
         candle_body > previous_body
     )
 
-    # Entry condition
+    # Entry
     signal = "WAIT ⏳"
 
     buy_entry = (
