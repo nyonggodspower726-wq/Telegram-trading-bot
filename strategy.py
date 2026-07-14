@@ -27,17 +27,15 @@ def analyze_market():
     candles = data["values"]
 
     latest = candles[0]
+    previous = candles[1]
 
     open_price = float(latest["open"])
+    close_price = float(latest["close"])
     high_price = float(latest["high"])
     low_price = float(latest["low"])
-    close_price = float(latest["close"])
 
-    highs = [float(c["high"]) for c in candles[:10]]
-    lows = [float(c["low"]) for c in candles[:10]]
-
-    swing_high = max(highs)
-    swing_low = min(lows)
+    prev_open = float(previous["open"])
+    prev_close = float(previous["close"])
 
     confidence = 0
     reasons = []
@@ -47,40 +45,37 @@ def analyze_market():
         trend = "Bullish 🟢"
         confidence += 20
         reasons.append("Bullish trend")
-    elif close_price < open_price:
+    else:
         trend = "Bearish 🔴"
         confidence += 20
         reasons.append("Bearish trend")
+
+    # Candle confirmation
+    if close_price > open_price:
+        confidence += 30
+        reasons.append("Bullish candle")
     else:
-        trend = "Neutral 🟡"
-
-    liquidity = "None"
-
-    # Liquidity Sweep
-    if low_price <= swing_low:
-        liquidity = "Sell-side Sweep ✅"
         confidence += 30
-        reasons.append("Sell-side liquidity swept")
+        reasons.append("Bearish candle")
 
-    elif high_price >= swing_high:
-        liquidity = "Buy-side Sweep ✅"
+    # Previous candle confirmation
+    if (close_price > open_price and prev_close > prev_open) or \
+       (close_price < open_price and prev_close < prev_open):
+        confidence += 20
+        reasons.append("Previous candle agrees")
+
+    # Strong candle body
+    candle_range = high_price - low_price
+    candle_body = abs(close_price - open_price)
+
+    if candle_range > 0 and candle_body / candle_range >= 0.6:
         confidence += 30
-        reasons.append("Buy-side liquidity swept")
+        reasons.append("Strong momentum candle")
 
-    signal = "WAIT ⏳"
-
-    # Confirmation Candle
-    if liquidity == "Sell-side Sweep ✅" and close_price > open_price:
-        confidence += 50
-        reasons.append("Bullish confirmation candle")
-        signal = "BUY 🟢"
-
-    elif liquidity == "Buy-side Sweep ✅" and close_price < open_price:
-        confidence += 50
-        reasons.append("Bearish confirmation candle")
-        signal = "SELL 🔴"
-
-    if confidence < 50:
+    # Final signal
+    if confidence >= 50:
+        signal = "BUY 🟢" if close_price > open_price else "SELL 🔴"
+    else:
         signal = "WAIT ⏳"
 
     return f"""
@@ -92,15 +87,10 @@ Expiry: {expiry}
 
 Trend: {trend}
 
-Swing High: {swing_high}
-Swing Low : {swing_low}
-
-Liquidity: {liquidity}
-
 Confidence: {confidence}%
 
 Signal: {signal}
 
 Reason:
-- {'\n- '.join(reasons) if reasons else 'No valid setup'}
+- {'\n- '.join(reasons)}
 """
