@@ -1,21 +1,14 @@
-import os
 from datetime import datetime
 import requests
 
-API_KEY = "aba787bf68ba4008b359f34229fdbc29"
+API_KEY = "YOUR_TWELVEDATA_API_KEY"
 
 
 def is_market_open():
-    """
-    Forex market closed on Saturday and Sunday.
-    Monday = 0, Sunday = 6
-    """
     day = datetime.utcnow().weekday()
 
-    if day in [5, 6]:
-        return False
-
-    return True
+    # Saturday = 5, Sunday = 6
+    return day not in [5, 6]
 
 
 def get_market_data(symbol):
@@ -35,8 +28,23 @@ def get_market_data(symbol):
         "apikey": API_KEY
     }
 
-    response = requests.get(url, params=params)
+    try:
 
-    data = response.json()
+        response = requests.get(url, params=params, timeout=10)
 
-    return data
+        data = response.json()
+
+        if "values" not in data:
+            return {
+                "status": "ERROR",
+                "message": data.get("message", "No candle data received.")
+            }
+
+        return data
+
+    except Exception as e:
+
+        return {
+            "status": "ERROR",
+            "message": str(e)
+        }
