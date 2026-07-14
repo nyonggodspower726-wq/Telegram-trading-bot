@@ -28,8 +28,9 @@ Pair: {pair}
 
     candles = data["values"]
 
-    latest = candles[0]
-    previous = candles[1]
+    # Use closed candles only
+    latest = candles[1]
+    previous = candles[2]
 
     candle_time = latest.get("datetime", "Unknown")
 
