@@ -7,7 +7,7 @@ from strategy import analyze_market
 from scanner import start_scanner
 
 
-TOKEN = "8892992589:AAG7UoaWY_S12hn5Bmz9orDtrO3NoWdCdDM"
+TOKEN = "YOUR_BOT_TOKEN"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
