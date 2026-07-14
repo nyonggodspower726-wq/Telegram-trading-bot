@@ -2,11 +2,15 @@ from market import get_market_data
 
 
 def analyze_market():
+    pair = "EUR/USD"
+    timeframe = "5M"
+    expiry = "15 Minutes"
+
     data = get_market_data()
 
     if data.get("status") == "CLOSED":
         return f"""
-📊 PipsPilot CRT
+📊 PipsPilot Analysis
 
 🛑 Market CLOSED
 
@@ -14,55 +18,148 @@ def analyze_market():
 """
 
     if "values" not in data:
-        return f"API Error:\n{data}"
+        return f"""
+❌ API Error
+
+{data}
+"""
 
     candles = data["values"]
 
-    current = candles[0]
+    latest = candles[0]
     previous = candles[1]
 
-    co = float(current["open"])
-    cc = float(current["close"])
+    open_price = float(latest["open"])
+    close_price = float(latest["close"])
+    high_price = float(latest["high"])
+    low_price = float(latest["low"])
 
-    po = float(previous["open"])
-    pc = float(previous["close"])
+    prev_open = float(previous["open"])
+    prev_close = float(previous["close"])
 
-    signal = "WAIT ⏳"
     confidence = 0
-    reason = "No valid setup"
+    reasons = []
 
-    # Bullish Engulfing
-    if (
-        pc < po and
-        cc > co and
-        co <= pc and
-        cc >= po
-    ):
-        signal = "BUY 🟢"
-        confidence = 80
-        reason = "Bullish Engulfing"
+    # Trend
+    if close_price > open_price:
+        trend = "Bullish 🟢"
+        confidence += 20
+        reasons.append("Bullish trend")
+    else:
+        trend = "Bearish 🔴"
+        confidence += 20
+        reasons.append("Bearish trend")
 
-    # Bearish Engulfing
-    elif (
-        pc > po and
-        cc < co and
-        co >= pc and
-        cc <= po
-    ):
-        signal = "SELL 🔴"
-        confidence = 80
-        reason = "Bearish Engulfing"
+    # Candle direction
+    if close_price > open_price:
+        confidence += 20
+        reasons.append("Bullish candle")
+    else:
+        confidence += 20
+        reasons.append("Bearish candle")
+
+    # Previous candle agreement
+    if (close_price > open_price and prev_close > prev_open) or \
+       (close_price < open_price and prev_close < prev_open):
+        confidence += 20
+        reasons.append("Previous candle agrees")
+
+    # Candle size
+    candle_range = high_price - low_price
+    candle_body = abs(close_price - open_price)
+    previous_body = abs(prev_close - prev_open)
+
+    if candle_range > 0 and candle_body / candle_range >= 0.6:
+        confidence += 20
+        reasons.append("Strong momentum candle")
+
+    # Engulfing
+    bullish_engulfing = (
+        prev_close < prev_open and
+        close_price > open_price and
+        open_price <= prev_close and
+        close_price >= prev_open
+    )
+
+    bearish_engulfing = (
+        prev_close > prev_open and
+        close_price < open_price and
+        open_price >= prev_close and
+        close_price <= prev_open
+    )
+
+    # Overlapping candle
+    bullish_overlap = (
+        close_price > open_price and
+        close_price > prev_close
+    )
+
+    bearish_overlap = (
+        close_price < open_price and
+        close_price < prev_close
+    )
+
+    # Bigger candle
+    bullish_bigger = (
+        close_price > open_price and
+        candle_body > previous_body
+    )
+
+    bearish_bigger = (
+        close_price < open_price and
+        candle_body > previous_body
+    )
+
+    # Entry condition
+    signal = "WAIT ⏳"
+
+    buy_entry = (
+        bullish_engulfing or
+        bullish_overlap or
+        bullish_bigger
+    )
+
+    sell_entry = (
+        bearish_engulfing or
+        bearish_overlap or
+        bearish_bigger
+    )
+
+    if confidence >= 50:
+
+        if close_price > open_price and buy_entry:
+            signal = "BUY 🟢"
+
+            if bullish_engulfing:
+                reasons.append("Bullish engulfing entry")
+            elif bullish_overlap:
+                reasons.append("Bullish overlap entry")
+            else:
+                reasons.append("Bigger bullish candle entry")
+
+        elif close_price < open_price and sell_entry:
+            signal = "SELL 🔴"
+
+            if bearish_engulfing:
+                reasons.append("Bearish engulfing entry")
+            elif bearish_overlap:
+                reasons.append("Bearish overlap entry")
+            else:
+                reasons.append("Bigger bearish candle entry")
 
     return f"""
-📊 PipsPilot CRT
+📊 PipsPilot Price Action
 
-Pair: EUR/USD
-Timeframe: 5M
-Expiry: 15 Minutes
+Pair: {pair}
+Timeframe: {timeframe}
+Expiry: {expiry}
 
-Signal: {signal}
+Trend: {trend}
+
 Confidence: {confidence}%
 
+Signal: {signal}
+
 Reason:
-{reason}
+- {'\n- '.join(reasons)}
 """
