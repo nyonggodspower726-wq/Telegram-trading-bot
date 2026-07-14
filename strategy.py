@@ -2,15 +2,11 @@ from market import get_market_data
 
 
 def analyze_market():
-    pair = "EUR/USD"
-    timeframe = "5M"
-    expiry = "15 Minutes"
-
     data = get_market_data()
 
     if data.get("status") == "CLOSED":
         return f"""
-📊 PipsPilot CRT Analysis
+📊 PipsPilot CRT
 
 🛑 Market CLOSED
 
@@ -18,79 +14,55 @@ def analyze_market():
 """
 
     if "values" not in data:
-        return f"""
-❌ API Error
-
-{data}
-"""
+        return f"API Error:\n{data}"
 
     candles = data["values"]
 
-    latest = candles[0]
+    current = candles[0]
     previous = candles[1]
 
-    open_price = float(latest["open"])
-    close_price = float(latest["close"])
-    high_price = float(latest["high"])
-    low_price = float(latest["low"])
+    co = float(current["open"])
+    cc = float(current["close"])
 
-    prev_open = float(previous["open"])
-    prev_close = float(previous["close"])
+    po = float(previous["open"])
+    pc = float(previous["close"])
 
+    signal = "WAIT ⏳"
     confidence = 0
-    reasons = []
+    reason = "No valid setup"
 
-    # Trend
-    if close_price > open_price:
-        trend = "Bullish 🟢"
-        confidence += 20
-        reasons.append("Bullish trend")
-    else:
-        trend = "Bearish 🔴"
-        confidence += 20
-        reasons.append("Bearish trend")
+    # Bullish Engulfing
+    if (
+        pc < po and
+        cc > co and
+        co <= pc and
+        cc >= po
+    ):
+        signal = "BUY 🟢"
+        confidence = 80
+        reason = "Bullish Engulfing"
 
-    # Candle confirmation
-    if close_price > open_price:
-        confidence += 30
-        reasons.append("Bullish candle")
-    else:
-        confidence += 30
-        reasons.append("Bearish candle")
-
-    # Previous candle confirmation
-    if (close_price > open_price and prev_close > prev_open) or \
-       (close_price < open_price and prev_close < prev_open):
-        confidence += 20
-        reasons.append("Previous candle agrees")
-
-    # Strong candle body
-    candle_range = high_price - low_price
-    candle_body = abs(close_price - open_price)
-
-    if candle_range > 0 and candle_body / candle_range >= 0.6:
-        confidence += 30
-        reasons.append("Strong momentum candle")
-
-    # Final signal
-    if confidence >= 50:
-        signal = "BUY 🟢" if close_price > open_price else "SELL 🔴"
-    else:
-        signal = "WAIT ⏳"
+    # Bearish Engulfing
+    elif (
+        pc > po and
+        cc < co and
+        co >= pc and
+        cc <= po
+    ):
+        signal = "SELL 🔴"
+        confidence = 80
+        reason = "Bearish Engulfing"
 
     return f"""
-📊 PipsPilot CRT Analysis
+📊 PipsPilot CRT
 
-Pair: {pair}
-Timeframe: {timeframe}
-Expiry: {expiry}
-
-Trend: {trend}
-
-Confidence: {confidence}%
+Pair: EUR/USD
+Timeframe: 5M
+Expiry: 15 Minutes
 
 Signal: {signal}
+Confidence: {confidence}%
 
 Reason:
-- {'\n- '.join(reasons)}
+{reason}
 """
