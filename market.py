@@ -30,7 +30,7 @@ def get_market_data(symbol):
 
     params = {
         "symbol": symbol,
-        "interval": "5min",
+        "interval": "1min",
         "outputsize": 50,
         "apikey": API_KEY
     }
