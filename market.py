@@ -31,7 +31,7 @@ def get_market_data():
     params = {
         "symbol": "EUR/USD",
         "interval": "5min",
-        "outputsize": 5,
+        "outputsize": 50,
         "apikey": API_KEY
     }
 
