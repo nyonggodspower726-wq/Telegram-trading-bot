@@ -3,8 +3,8 @@ from market import get_market_data
 
 def analyze_market(pair):
 
-    timeframe = "5M"
-    expiry = "15 Minutes"
+    timeframe = "1M"
+    expiry = "2 Minutes"
 
     data = get_market_data(pair)
 
@@ -112,7 +112,6 @@ Pair: {pair}
         candle_body > previous_body
     )
 
-    # Entry
     signal = "WAIT ⏳"
 
     buy_entry = (
