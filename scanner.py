@@ -1,10 +1,10 @@
 import asyncio
+from datetime import datetime
 
 from strategy import analyze_market
 
 
 CHAT_ID = "6588451803"
-
 
 PAIRS = [
     "EUR/USD",
@@ -19,16 +19,23 @@ async def start_scanner(app):
     last_signals = {}
 
     while True:
-        print("Scanner running... checking market")
+
+        now = datetime.utcnow()
+
+        # Wait until the next 5-minute candle closes
+        wait = 300 - (now.minute % 5) * 60 - now.second
+
+        if wait > 0:
+            await asyncio.sleep(wait)
+
+        print("Scanning closed 5M candle...")
 
         for pair in PAIRS:
 
             result = analyze_market(pair)
 
-            # Send only BUY or SELL signals
             if "BUY 🟢" in result or "SELL 🔴" in result:
 
-                # Prevent duplicate messages for each pair
                 if last_signals.get(pair) != result:
 
                     await app.bot.send_message(
@@ -38,9 +45,7 @@ async def start_scanner(app):
 
                     last_signals[pair] = result
 
-                    print(f"{pair} trade signal sent to Telegram")
+                    print(f"{pair} signal sent")
 
             else:
                 print(f"{pair}: No setup")
-
-        await asyncio.sleep(300)
