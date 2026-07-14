@@ -4,7 +4,7 @@ from market import get_market_data
 def analyze_market(pair):
 
     timeframe = "5M"
-    expiry = "15 Minutes"
+    expiry = "5 Minutes"
 
     data = get_market_data(pair)
 
@@ -28,131 +28,90 @@ Pair: {pair}
 
     candles = data["values"]
 
-    # Use closed candles only
-    latest = candles[1]
-    previous = candles[2]
+    # Last 4 CLOSED candles
+    c1 = candles[1]
+    c2 = candles[2]
+    c3 = candles[3]
+    c4 = candles[4]
 
-    candle_time = latest.get("datetime", "Unknown")
+    candle_time = c1["datetime"]
 
-    open_price = float(latest["open"])
-    close_price = float(latest["close"])
-    high_price = float(latest["high"])
-    low_price = float(latest["low"])
+    o1, h1, l1, cl1 = map(float, [c1["open"], c1["high"], c1["low"], c1["close"]])
+    o2, h2, l2, cl2 = map(float, [c2["open"], c2["high"], c2["low"], c2["close"]])
+    o3, h3, l3, cl3 = map(float, [c3["open"], c3["high"], c3["low"], c3["close"]])
+    o4, h4, l4, cl4 = map(float, [c4["open"], c4["high"], c4["low"], c4["close"]])
 
-    prev_open = float(previous["open"])
-    prev_close = float(previous["close"])
-
-    confidence = 0
     reasons = []
+    confidence = 0
 
-    # Trend
-    if close_price > open_price:
-        trend = "Bullish 🟢"
-        confidence += 20
-        reasons.append("Bullish trend")
-    else:
-        trend = "Bearish 🔴"
-        confidence += 20
-        reasons.append("Bearish trend")
+    signal = "WAIT ⏳"
+    trend = "Sideways 🟡"
 
-    # Candle direction
-    if close_price > open_price:
-        confidence += 20
-        reasons.append("Bullish candle")
-    else:
-        confidence += 20
-        reasons.append("Bearish candle")
+    # Strong candle
+    body = abs(cl1 - o1)
+    rng = h1 - l1
 
-    # Previous candle agreement
-    if (close_price > open_price and prev_close > prev_open) or \
-       (close_price < open_price and prev_close < prev_open):
-        confidence += 20
-        reasons.append("Previous candle agrees")
-
-    # Candle size
-    candle_range = high_price - low_price
-    candle_body = abs(close_price - open_price)
-    previous_body = abs(prev_close - prev_open)
-
-    if candle_range > 0 and candle_body / candle_range >= 0.6:
+    strong = False
+    if rng > 0 and body / rng >= 0.60:
+        strong = True
         confidence += 20
         reasons.append("Strong momentum candle")
 
-    # Engulfing
-    bullish_engulfing = (
-        prev_close < prev_open and
-        close_price > open_price and
-        open_price <= prev_close and
-        close_price >= prev_open
+    # Trend
+    bullish_trend = (
+        cl1 > cl2 and
+        cl2 > cl3
     )
 
-    bearish_engulfing = (
-        prev_close > prev_open and
-        close_price < open_price and
-        open_price >= prev_close and
-        close_price <= prev_open
+    bearish_trend = (
+        cl1 < cl2 and
+        cl2 < cl3
     )
 
-    # Overlap
-    bullish_overlap = (
-        close_price > open_price and
-        close_price > prev_close
+    if bullish_trend:
+        trend = "Bullish 🟢"
+        confidence += 30
+        reasons.append("Bullish trend")
+
+    elif bearish_trend:
+        trend = "Bearish 🔴"
+        confidence += 30
+        reasons.append("Bearish trend")
+
+    # Breakout
+    bullish_break = (
+        cl1 > o1 and
+        cl1 > h2
     )
 
-    bearish_overlap = (
-        close_price < open_price and
-        close_price < prev_close
+    bearish_break = (
+        cl1 < o1 and
+        cl1 < l2
     )
 
-    # Bigger candle
-    bullish_bigger = (
-        close_price > open_price and
-        candle_body > previous_body
+    # Continuation
+    bullish_continuation = (
+        bullish_break and
+        body > abs(cl2 - o2)
     )
 
-    bearish_bigger = (
-        close_price < open_price and
-        candle_body > previous_body
+    bearish_continuation = (
+        bearish_break and
+        body > abs(cl2 - o2)
     )
 
-    signal = "WAIT ⏳"
+    if bullish_continuation and bullish_trend and strong:
+        signal = "BUY 🟢"
+        confidence += 50
+        reasons.append("Bullish breakout continuation")
 
-    buy_entry = (
-        bullish_engulfing or
-        bullish_overlap or
-        bullish_bigger
-    )
-
-    sell_entry = (
-        bearish_engulfing or
-        bearish_overlap or
-        bearish_bigger
-    )
-
-    if confidence >= 50:
-
-        if close_price > open_price and buy_entry:
-            signal = "BUY 🟢"
-
-            if bullish_engulfing:
-                reasons.append("Bullish engulfing entry")
-            elif bullish_overlap:
-                reasons.append("Bullish overlap entry")
-            else:
-                reasons.append("Bigger bullish candle entry")
-
-        elif close_price < open_price and sell_entry:
-            signal = "SELL 🔴"
-
-            if bearish_engulfing:
-                reasons.append("Bearish engulfing entry")
-            elif bearish_overlap:
-                reasons.append("Bearish overlap entry")
-            else:
-                reasons.append("Bigger bearish candle entry")
+    elif bearish_continuation and bearish_trend and strong:
+        signal = "SELL 🔴"
+        confidence += 50
+        reasons.append("Bearish breakout continuation")
 
     return f"""
-📊 PipsPilot Price Action
+📊 PipsPilot V2
 
 Pair: {pair}
 Timeframe: {timeframe}
