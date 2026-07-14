@@ -6,28 +6,41 @@ from strategy import analyze_market
 CHAT_ID = "6588451803"
 
 
+PAIRS = [
+    "EUR/USD",
+    "GBP/USD",
+    "USD/JPY",
+    "XAU/USD"
+]
+
+
 async def start_scanner(app):
 
-    last_signal = None
+    last_signals = {}
 
     while True:
         print("Scanner running... checking market")
 
-        result = analyze_market()
+        for pair in PAIRS:
 
-        # Send only BUY or SELL signals
-        if "BUY 🟢" in result or "SELL 🔴" in result:
+            result = analyze_market(pair)
 
-            # Prevent duplicate messages
-            if result != last_signal:
+            # Send only BUY or SELL signals
+            if "BUY 🟢" in result or "SELL 🔴" in result:
 
-                await app.bot.send_message(
-                    chat_id=CHAT_ID,
-                    text=result
-                )
+                # Prevent duplicate messages for each pair
+                if last_signals.get(pair) != result:
 
-                last_signal = result
+                    await app.bot.send_message(
+                        chat_id=CHAT_ID,
+                        text=result
+                    )
 
-                print("Trade signal sent to Telegram")
+                    last_signals[pair] = result
+
+                    print(f"{pair} trade signal sent to Telegram")
+
+            else:
+                print(f"{pair}: No setup")
 
         await asyncio.sleep(300)
