@@ -18,7 +18,7 @@ def is_market_open():
     return True
 
 
-def get_market_data():
+def get_market_data(symbol):
 
     if not is_market_open():
         return {
@@ -29,7 +29,7 @@ def get_market_data():
     url = "https://api.twelvedata.com/time_series"
 
     params = {
-        "symbol": "EUR/USD",
+        "symbol": symbol,
         "interval": "5min",
         "outputsize": 50,
         "apikey": API_KEY
