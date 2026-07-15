@@ -22,30 +22,38 @@ async def start_scanner(app):
 
         now = datetime.utcnow()
 
-        # Wait until the next 5-minute candle closes
+        # Wait until next 5-minute candle
         wait = 300 - (now.minute % 5) * 60 - now.second
 
         if wait > 0:
             await asyncio.sleep(wait)
 
+        # Give API time to publish the closed candle
+        await asyncio.sleep(3)
+
         print("Scanning closed 5M candle...")
 
         for pair in PAIRS:
 
-            result = analyze_market(pair)
+            try:
 
-            if "BUY 🟢" in result or "SELL 🔴" in result:
+                result = analyze_market(pair)
 
-                if last_signals.get(pair) != result:
+                if "BUY 🟢" in result or "SELL 🔴" in result:
 
-                    await app.bot.send_message(
-                        chat_id=CHAT_ID,
-                        text=result
-                    )
+                    if last_signals.get(pair) != result:
 
-                    last_signals[pair] = result
+                        await app.bot.send_message(
+                            chat_id=CHAT_ID,
+                            text=result
+                        )
 
-                    print(f"{pair} signal sent")
+                        last_signals[pair] = result
 
-            else:
-                print(f"{pair}: No setup")
+                        print(f"{pair} signal sent")
+
+                else:
+                    print(f"{pair}: No setup")
+
+            except Exception as e:
+                print(f"{pair}: {e}")
