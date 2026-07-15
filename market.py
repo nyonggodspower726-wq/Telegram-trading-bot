@@ -1,7 +1,7 @@
 from datetime import datetime
 import requests
 
-API_KEY = "aba787bf68ba4008b359f34229fdbc29"
+API_KEY = "f3d66197c6b648afb120aa1c4b243e1b"
 
 
 def is_market_open():
