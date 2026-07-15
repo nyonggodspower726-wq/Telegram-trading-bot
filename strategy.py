@@ -28,90 +28,125 @@ Pair: {pair}
 
     candles = data["values"]
 
-    # Last 4 CLOSED candles
+    # Last CLOSED candle
     c1 = candles[1]
-    c2 = candles[2]
-    c3 = candles[3]
-    c4 = candles[4]
 
     candle_time = c1["datetime"]
 
-    o1, h1, l1, cl1 = map(float, [c1["open"], c1["high"], c1["low"], c1["close"]])
-    o2, h2, l2, cl2 = map(float, [c2["open"], c2["high"], c2["low"], c2["close"]])
-    o3, h3, l3, cl3 = map(float, [c3["open"], c3["high"], c3["low"], c3["close"]])
-    o4, h4, l4, cl4 = map(float, [c4["open"], c4["high"], c4["low"], c4["close"]])
+    o1 = float(c1["open"])
+    h1 = float(c1["high"])
+    l1 = float(c1["low"])
+    cl1 = float(c1["close"])
 
-    reasons = []
-    confidence = 0
-
-    signal = "WAIT ⏳"
     trend = "Sideways 🟡"
+    confidence = 0
+    reasons = []
+    signal = "WAIT ⏳"
 
-    # Strong candle
-    body = abs(cl1 - o1)
-    rng = h1 - l1
+    # ----------------------------
+    # Find last bearish candle
+    # ----------------------------
 
-    strong = False
-    if rng > 0 and body / rng >= 0.60:
-        strong = True
-        confidence += 20
-        reasons.append("Strong momentum candle")
+    last_bear_high = None
 
-    # Trend
-    bullish_trend = (
-        cl1 > cl2 and
-        cl2 > cl3
-    )
+    for candle in candles[2:20]:
 
-    bearish_trend = (
-        cl1 < cl2 and
-        cl2 < cl3
-    )
+        o = float(candle["open"])
+        c = float(candle["close"])
 
-    if bullish_trend:
+        if c < o:
+            last_bear_high = float(candle["high"])
+            break
+
+    # ----------------------------
+    # Find last bullish candle
+    # ----------------------------
+
+    last_bull_low = None
+
+    for candle in candles[2:20]:
+
+        o = float(candle["open"])
+        c = float(candle["close"])
+
+        if c > o:
+            last_bull_low = float(candle["low"])
+            break
+
+    # ----------------------------
+    # Bullish Trend
+    # ----------------------------
+
+    bullish = cl1 > o1
+
+    # ----------------------------
+    # Bearish Trend
+    # ----------------------------
+
+    bearish = cl1 < o1
+
+    # ----------------------------
+    # BUY
+    # ----------------------------
+
+    if bullish:
+
         trend = "Bullish 🟢"
-        confidence += 30
-        reasons.append("Bullish trend")
 
-    elif bearish_trend:
+        if last_bear_high is not None:
+
+            if cl1 > last_bear_high:
+
+                signal = "BUY 🟢"
+                confidence = 100
+
+                reasons.append("5M Candle Breakout")
+                reasons.append("Closed above last bearish candle")
+
+        else:
+
+            prev_high = float(candles[2]["high"])
+
+            if cl1 > prev_high:
+
+                signal = "BUY 🟢"
+                confidence = 100
+
+                reasons.append("Strong bullish impulse")
+                reasons.append("Closed above previous bullish candle")
+
+    # ----------------------------
+    # SELL
+    # ----------------------------
+
+    elif bearish:
+
         trend = "Bearish 🔴"
-        confidence += 30
-        reasons.append("Bearish trend")
 
-    # Breakout
-    bullish_break = (
-        cl1 > o1 and
-        cl1 > h2
-    )
+        if last_bull_low is not None:
 
-    bearish_break = (
-        cl1 < o1 and
-        cl1 < l2
-    )
+            if cl1 < last_bull_low:
 
-    # Continuation
-    bullish_continuation = (
-        bullish_break and
-        body > abs(cl2 - o2)
-    )
+                signal = "SELL 🔴"
+                confidence = 100
 
-    bearish_continuation = (
-        bearish_break and
-        body > abs(cl2 - o2)
-    )
+                reasons.append("5M Candle Breakout")
+                reasons.append("Closed below last bullish candle")
 
-    if bullish_continuation and bullish_trend and strong:
-        signal = "BUY 🟢"
-        confidence += 50
-        reasons.append("Bullish breakout continuation")
+        else:
 
-    elif bearish_continuation and bearish_trend and strong:
-        signal = "SELL 🔴"
-        confidence += 50
-        reasons.append("Bearish breakout continuation")
+            prev_low = float(candles[2]["low"])
+
+            if cl1 < prev_low:
+
+                signal = "SELL 🔴"
+                confidence = 100
+
+                reasons.append("Strong bearish impulse")
+                reasons.append("Closed below previous bearish candle")
 
     return f"""
-📊 PipsPilot V2
+📊 PipsPilot V3
 
 Pair: {pair}
 Timeframe: {timeframe}
@@ -125,5 +160,5 @@ Confidence: {confidence}%
 Signal: {signal}
 
 Reason:
-- {'\n- '.join(reasons)}
+- {'\n- '.join(reasons) if reasons else "No breakout"}
 """
