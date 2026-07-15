@@ -24,23 +24,49 @@ def get_market_data(symbol):
     params = {
         "symbol": symbol,
         "interval": "5min",
-        "outputsize": 50,
+        "outputsize": 100,
         "apikey": API_KEY
     }
 
     try:
 
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(
+            url,
+            params=params,
+            timeout=15
+        )
+
+        response.raise_for_status()
 
         data = response.json()
+
+        if data.get("status") == "error":
+            return {
+                "status": "ERROR",
+                "message": data.get("message", "Unknown API error.")
+            }
 
         if "values" not in data:
             return {
                 "status": "ERROR",
-                "message": data.get("message", "No candle data received.")
+                "message": "No candle data received."
             }
 
         return data
+
+    except requests.exceptions.Timeout:
+
+        return {
+            "status": "ERROR",
+            "message": "API request timed out."
+        }
+
+    except requests.exceptions.ConnectionError:
+
+        return {
+            "status": "ERROR",
+            "message": "No internet connection."
+        }
 
     except Exception as e:
 
